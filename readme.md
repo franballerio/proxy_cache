@@ -1,0 +1,48 @@
+
+# Proxy Cache
+
+A caching proxy server implementation.
+
+## Description
+
+This project implements a proxy server with caching capabilities to improve performance by storing frequently requested resources.
+
+## Features
+
+- HTTP proxy functionality
+- Response caching
+- Cache management
+- Request forwarding
+
+## Installation
+
+```bash
+# Clone the repository
+git clone <repository-url>
+cd proxy_cache
+
+# Install dependencies
+npm install
+```
+
+## Usage
+
+```bash
+# Start the proxy server
+npm start
+```
+
+## Configuration
+
+Configure the proxy settings in the configuration file or environment variables.
+
+## Contributing
+
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Submit a pull request
+
+## License
+
+MIT License

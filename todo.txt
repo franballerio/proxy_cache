@@ -1,0 +1,6 @@
+we are creating a server that forwards requests to another server and caches the responses
+
+Steps:
+    1. create a server that forwards the req and gets the res from that server
+    2. user has to input as a cli option the server to forward and the port for our server
+    3. implement the cache

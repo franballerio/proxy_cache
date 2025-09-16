@@ -1,0 +1,18 @@
+{
+  "name": "proxy_cache",
+  "version": "1.0.0",
+  "description": "A server that caches responses from another server",
+  "license": "ISC",
+  "author": "fb",
+  "type": "module",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "dev": "node --watch index.js"
+  },
+  "dependencies": {
+    "express": "^5.1.0",
+    "pkg": "^5.8.1",
+    "yargs": "^18.0.0"
+  }
+}
