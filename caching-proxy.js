@@ -19,6 +19,10 @@ const argv = yargs(hideBin(process.argv))
     'description': 'Target server to forward requests to',
     'default': 'https://dummyjson.com/'
 })
+.option('clear-cache', {
+    'type': 'boolean',
+    'default': false
+})
 .argv;
 
 const app = express();
@@ -31,11 +35,8 @@ redisClient.connect().catch( err => {
     console.error('Failed to connect to Redis', err);
     process.exit(1)
 })
-
 const allowedRoutes = ['products', 'users', 'posts'];
 const targetServer = argv.target;
-
-app.use(responseTime());
 const cacheMiddleware = async (req, res, next) => {
     const { route } = req.params;
     const cacheKey = req.originalUrl
@@ -54,14 +55,18 @@ const cacheMiddleware = async (req, res, next) => {
               .header('X-Cache', 'HIT')
               .json(JSON.parse(cachedData));
 }
-    
+
+if (argv.clearCache) {
+    console.log(' --clear-cache flag detected. Clearing Redis cache...');
+    (async () => {
+        await redisClient.flushAll()
+    })
+}
+
+app.use(responseTime());
+
 app.get('/', (req, res) => {
   res.send('Send a request to this urls:\n\t- Products: /products');
-});
-
-app.get('/clear-cache', async (req, res) => {
-    await redisClient.flushAll();
-    res.send('Cache cleared');
 });
 
 app.get('/:route', cacheMiddleware, async (req, res) => {
@@ -75,7 +80,7 @@ app.get('/:route', cacheMiddleware, async (req, res) => {
         const { data } = await axios.get(`${targetServer}${route}`)
         const cacheKey = req.originalUrl
 
-        await redisClient.set(cacheKey, JSON.stringify(data), 'EX', 300); 
+         
         
         res.json(data)
     }

@@ -17,5 +17,10 @@
     "redis": "^5.8.2",
     "response-time": "^2.3.4",
     "yargs": "^18.0.0"
-  }
+  },
+  "bin": "index.js",
+  "pkg": {
+    "scripts": "index.js",
+    "assets": "views/**/*"
+}
 }

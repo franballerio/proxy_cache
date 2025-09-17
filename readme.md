@@ -29,7 +29,10 @@ npm install
 
 ```bash
 # Start the proxy server
-npm start
+node caching-proxy.js --port <number> --origin <url>
+
+# clear the cache
+node caching-proxy.js --clear-cache
 ```
 
 ## Configuration
