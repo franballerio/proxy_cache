@@ -3,6 +3,7 @@ import yargs from 'yargs';
 import { hideBin } from 'yargs/helpers';
 import responseTime from 'response-time';
 import { createClient } from 'redis';
+import axios from 'axios'
 
 
 const argv = yargs(hideBin(process.argv))
@@ -16,7 +17,7 @@ const argv = yargs(hideBin(process.argv))
     'alias': 't',
     'type': 'string',
     'description': 'Target server to forward requests to',
-    'default': 'https://dummyjson.com'
+    'default': 'https://dummyjson.com/'
 })
 .argv;
 
@@ -26,30 +27,34 @@ const redisClient = createClient({
     host: 'localhost',
     port: 6379
 });
-redisClient.connect()
+redisClient.connect().catch( err => {
+    console.error('Failed to connect to Redis', err);
+    process.exit(1)
+})
 
 const allowedRoutes = ['products', 'users', 'posts'];
-const serverTarget = argv.target;
+const targetServer = argv.target;
 
 app.use(responseTime());
 const cacheMiddleware = async (req, res, next) => {
     const { route } = req.params;
+    const cacheKey = req.originalUrl
 
-    if (allowedRoutes.includes(route)) {
-        // verify is the request is cached
-        const cachedData = await redisClient.get(route)
-
-        console.log(`Cache hit for ${route}`);
-        return res
-                  .header('X-Cache', 'HIT')
-                  .json(JSON.parse(cachedData));
-    } else {
-        res.header('X-Cache', 'MISS')
-        next()
+    // verify if the request is cached
+    const cachedData = await redisClient.get(cacheKey)
+    
+    if (!cachedData) {
+        console.log(`Cache miss for ${cacheKey}`);
+        res.header('X-Cache', 'MISS');
+        return next();
     }
+
+    console.log(`Cache hit for ${cacheKey}`);
+    return res
+              .header('X-Cache', 'HIT')
+              .json(JSON.parse(cachedData));
 }
     
-
 app.get('/', (req, res) => {
   res.send('Send a request to this urls:\n\t- Products: /products');
 });
@@ -61,30 +66,23 @@ app.get('/clear-cache', async (req, res) => {
 
 app.get('/:route', cacheMiddleware, async (req, res) => {
     const { route } = req.params;
-
+    
     if (!allowedRoutes.includes(route)) {
         return res.status(400).send('Invalid route. Allowed routes are: ' + allowedRoutes.join(', '));
     } 
 
-    fetch(`${serverTarget}/${route}`)
-    .then(response => {
-        if (!response.ok) {
-            throw new Error('Network response was not ok ' + response.statusText);
-        }
+    try {
+        const { data } = await axios.get(`${targetServer}${route}`)
+        const cacheKey = req.originalUrl
 
-        return response.json();
-    })
-    .then(async (data) => {
-
-        await redisClient.set(route, JSON.stringify(data), 'EX', 300);
-
-        res
-        .json(data);
-    })
-    .catch(error => {
+        await redisClient.set(cacheKey, JSON.stringify(data), 'EX', 300); 
+        
+        res.json(data)
+    }
+    catch (error) {
         console.error(`Error fetching ${route} : ${error}`);
-        res.status(500).send(`Error fetching ${route}`);
-    });        
+        res.status(500).send(`Error fetching ${route}`);        
+    }     
 });
 
 app.listen(PORT, () => {
